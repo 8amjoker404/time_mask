@@ -3,7 +3,7 @@ const { requireAuth, requireAdmin } = require("../middleware/auth");
 const { requiredString } = require("../lib/db-helpers");
 
 const router = Router();
-const model = process.env.GOOGLE_MODEL || "gemini-2.5-flash";
+const model = process.env.GOOGLE_MODEL || "gemini-3.8-flash";
 
 // GET /api/settings/llm
 router.get("/llm", (_req, res) => {

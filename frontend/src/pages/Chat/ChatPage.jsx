@@ -43,7 +43,7 @@ function ChatPage() {
 
   return (
     <div className="dashboard-page chat-page-dashboard">
-      <Link className="dashboard-back-link" to="/explore"><FaArrowLeft /> Explore</Link>
+      <Link className="dashboard-back-link" to={`/characters/${maskId}`}><FaArrowLeft /> Character profile</Link>
       {error && <p className="dashboard-error">{error}</p>}
       <section className="one-chat-panel">
         <header className="one-chat-heading"><span className="dashboard-mask-monogram">{mask?.avatarUrl ? <img src={mask.avatarUrl} alt="" /> : mask?.name?.slice(0, 1) || '✳'}</span><div><p className="dashboard-eyebrow">A CONVERSATION ACROSS TIME</p><h1>{mask?.name || 'Loading mask…'}</h1><small>{[mask?.profession, mask?.era].filter(Boolean).join(' · ')}</small></div></header>

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { FaArrowRight, FaPaperPlane, FaPlus, FaUsers } from 'react-icons/fa6'
 import { groupsApi } from '../../api/groups'
 import { masksApi } from '../../api/masks'
-import { apiError } from '../../api/client'
+import { apiError, notifyToast } from '../../api/client'
 
 function GroupChatsPage() {
   const { groupId } = useParams()
@@ -39,6 +39,7 @@ function GroupChatsPage() {
       setGroupName('')
       setSelectedIds([])
       setCreateOpen(false)
+      notifyToast(`${group.name} group chat created.`)
       navigate(`/groups/${group.id}`)
     } catch (err) { setError(apiError(err)) }
   }

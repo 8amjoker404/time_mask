@@ -6,9 +6,10 @@ const symbols = ['♕', '✳', '⌘', '◉']
 
 function MaskCard({ mask, index = 0, saved = false, onToggleSaved }) {
   const tone = mask.tone || tones[index % tones.length]
+  const years = mask.era?.match(/\d{1,4}\s*(?:BCE|CE)?\s*[–-]\s*\d{1,4}\s*(?:BCE|CE)?/i)?.[0] || mask.era || 'Years unknown'
   return (
     <article className="dashboard-mask-card">
-      <Link to={`/chat/${mask.id}`} className={`dashboard-mask-art mask-${tone}`} aria-label={`Start a conversation with ${mask.name}`}>
+      <Link to={`/characters/${mask.id}`} className={`dashboard-mask-art mask-${tone}`} aria-label={`View ${mask.name}'s historical profile`}>
         {mask.avatarUrl
           ? <img className="mask-portrait-image" src={mask.avatarUrl} alt={mask.name} loading="lazy" />
           : <span className="dashboard-mask-symbol">{mask.symbol || symbols[index % symbols.length]}</span>}
@@ -16,15 +17,14 @@ function MaskCard({ mask, index = 0, saved = false, onToggleSaved }) {
         <span className="dashboard-mask-arrow"><FaArrowRight /></span>
       </Link>
       <div className="dashboard-mask-body">
-        <p className="dashboard-eyebrow">{mask.era || 'A voice from history'}</p>
+        <p className="dashboard-eyebrow">{years}</p>
         <div className="dashboard-mask-title-row">
-          <h3>{mask.name}</h3>
+          <h3><Link className="mask-card-profile-link" to={`/characters/${mask.id}`}>{mask.name}</Link></h3>
           {onToggleSaved && <button className="save-mask-button" onClick={() => onToggleSaved(mask)} aria-label={saved ? `Remove ${mask.name} from Your Twins` : `Save ${mask.name} to Your Twins`}>
             {saved ? <FaBookmark /> : <FaRegBookmark />}
           </button>}
         </div>
         {mask.profession && <p className="dashboard-mask-profession">{mask.profession}</p>}
-        <p>{mask.summary || 'Meet a new perspective from another time.'}</p>
       </div>
     </article>
   )

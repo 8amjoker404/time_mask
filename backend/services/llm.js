@@ -6,23 +6,20 @@ async function generatePersonaReply(mask, history, userMessage) {
     throw error;
   }
 
-  const contents = [...(history || []), { role: "user", content: userMessage }]
-    .map((message) => ({
-      role: message.role === "assistant" ? "model" : "user",
-      parts: [{ text: message.content }],
-    }));
-  const model = process.env.GOOGLE_MODEL || "gemini-2.5-flash";
+  const model = process.env.GOOGLE_MODEL || "gemini-3.8-flash";
+  const transcript = [...(history || []), { role: "user", content: userMessage }]
+    .map((message) => `${message.role === "assistant" ? mask.name : "Visitor"}: ${message.content}`)
+    .join("\n\n");
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    "https://generativelanguage.googleapis.com/v1beta/interactions",
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: `You are Time Mask, an AI persona inspired by a historical figure. Speak in a vivid, thoughtful first-person voice consistent with the figure's known era and character. Never claim certainty about private thoughts or events unsupported by history; make clear when you are speculating.\n\nPersona: ${mask.name}${mask.era ? ` (${mask.era})` : ""}\nCharacter specification: ${mask.character_spec}` }],
-        },
-        contents,
-        generationConfig: { temperature: 0.8, maxOutputTokens: 1200 },
+        model,
+        system_instruction: `You are Time Mask, an AI persona inspired by a historical figure. Speak in a vivid, thoughtful first-person voice consistent with the figure's known era and character. Never claim certainty about private thoughts or events unsupported by history; make clear when you are speculating. Treat the transcript as conversation context and answer only the latest Visitor message without adding speaker labels.\n\nPersona: ${mask.name}${mask.era ? ` (${mask.era})` : ""}${mask.profession ? `, ${mask.profession}` : ""}\nCharacter specification: ${mask.character_spec}`,
+        input: transcript,
+        generation_config: { max_output_tokens: 1200, thinking_level: "low" },
       }),
     }
   );
@@ -32,7 +29,12 @@ async function generatePersonaReply(mask, history, userMessage) {
     error.status = response.status === 429 ? 429 : 502;
     throw error;
   }
-  const reply = generated?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("").trim();
+  const reply = generated?.output_text?.trim()
+    || generated?.steps?.filter((step) => step.type === "model_output")
+      .flatMap((step) => step.content || [])
+      .map((part) => part.text || "")
+      .join("")
+      .trim();
   if (!reply) throw new Error("Google AI returned an empty response");
   return reply;
 }

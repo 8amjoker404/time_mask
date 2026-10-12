@@ -14,6 +14,7 @@ import ChatPage from './pages/Chat/ChatPage'
 import NotFound from './pages/NotFound/NotFound'
 import RequireAdmin from './pages/RequireAdmin/RequireAdmin'
 import AdminPage from './pages/Admin/AdminPage'
+import MaskProfilePage from './pages/MaskProfile/MaskProfilePage'
 
 function HomeRoute() {
   const { user, loading } = useAuth()
@@ -26,6 +27,9 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<AuthPage />} />
+      <Route element={<DashboardLayout />}>
+        <Route path="/characters/:maskId" element={<MaskProfilePage />} />
+      </Route>
       <Route element={<RequireAuth />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />

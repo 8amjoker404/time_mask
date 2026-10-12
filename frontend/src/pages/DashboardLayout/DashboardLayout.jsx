@@ -10,7 +10,7 @@ function DashboardLayout() {
     <div className="dashboard-shell">
       <header className="dashboard-header">
         <Link className="dashboard-brand" to="/dashboard"><span className="brand-mark"><span /></span><span>TIME <i>MASK</i></span></Link>
-        <div className="dashboard-user"><span className="dashboard-greeting">{user?.name}</span><button onClick={logout}>Sign out <FaArrowRight /></button></div>
+        <div className="dashboard-user">{user ? <><span className="dashboard-greeting">{user.name}</span><button onClick={logout}>Sign out <FaArrowRight /></button></> : <Link className="dashboard-sign-in" to="/login">Sign in <FaArrowRight /></Link>}</div>
       </header>
       <main className="dashboard-main"><Outlet /></main>
       <FooterNav />

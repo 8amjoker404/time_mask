@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import MaskCard from '../../components/MaskCard'
 import { twinsApi } from '../../api/twins'
-import { apiError } from '../../api/client'
+import { apiError, notifyToast } from '../../api/client'
 
 function YourTwinsPage() {
   const [twins, setTwins] = useState([])
@@ -14,6 +14,7 @@ function YourTwinsPage() {
     try {
       await twinsApi.remove(mask.id)
       setTwins((current) => current.filter((twin) => twin.id !== mask.id))
+      notifyToast(`${mask.name} removed from Your Twins.`)
     } catch (err) { setError(apiError(err)) }
   }
 

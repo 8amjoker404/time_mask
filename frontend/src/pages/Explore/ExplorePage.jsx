@@ -4,7 +4,7 @@ import { FaArrowLeft, FaMagnifyingGlass } from 'react-icons/fa6'
 import MaskCard from '../../components/MaskCard'
 import { masksApi } from '../../api/masks'
 import { twinsApi } from '../../api/twins'
-import { apiError } from '../../api/client'
+import { apiError, notifyToast } from '../../api/client'
 
 function ExplorePage() {
   const [masks, setMasks] = useState([])
@@ -19,16 +19,18 @@ function ExplorePage() {
     }).catch((err) => setError(apiError(err)))
   }, [])
 
-  const visibleMasks = useMemo(() => masks.filter((mask) => `${mask.name} ${mask.era || ''} ${mask.summary || ''}`.toLowerCase().includes(query.toLowerCase())), [masks, query])
+  const visibleMasks = useMemo(() => masks.filter((mask) => `${mask.name} ${mask.era || ''} ${mask.profession || ''}`.toLowerCase().includes(query.toLowerCase())), [masks, query])
   async function toggleSaved(mask) {
     const id = String(mask.id)
     try {
       if (savedIds.has(id)) {
         await twinsApi.remove(mask.id)
         setSavedIds((current) => new Set([...current].filter((savedId) => savedId !== id)))
+        notifyToast(`${mask.name} removed from Your Twins.`)
       } else {
         await twinsApi.save(mask.id)
         setSavedIds((current) => new Set([...current, id]))
+        notifyToast(`${mask.name} saved to Your Twins.`)
       }
     } catch (err) { setError(apiError(err)) }
   }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { authApi } from '../api/auth'
 import AuthContext from './auth-context'
+import { notifyToast } from '../api/client'
 
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -31,6 +32,7 @@ function AuthProvider({ children }) {
     const result = await request()
     window.localStorage.setItem('time-mask-token', result.token)
     setUser(result.user)
+    notifyToast(`Welcome, ${result.user.name}.`)
     return result.user
   }, [])
   const login = useCallback((credentials) => establishSession(() => authApi.login(credentials)), [establishSession])
@@ -39,6 +41,7 @@ function AuthProvider({ children }) {
     try { await authApi.logout() } catch { /* Discard the local session even when offline. */ }
     window.localStorage.removeItem('time-mask-token')
     setUser(null)
+    notifyToast('You have signed out.')
   }, [])
 
   const value = useMemo(() => ({ user, loading, login, register, logout }), [user, loading, login, register, logout])
