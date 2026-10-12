@@ -11,7 +11,7 @@ function MaskCard({ mask, index = 0, saved = false, onToggleSaved }) {
     <article className="dashboard-mask-card">
       <Link to={`/characters/${mask.id}`} className={`dashboard-mask-art mask-${tone}`} aria-label={`View ${mask.name}'s historical profile`}>
         {mask.avatarUrl
-          ? <img className="mask-portrait-image" src={mask.avatarUrl} alt={mask.name} loading="lazy" />
+          ? <><img className="mask-portrait-backdrop" src={mask.avatarUrl} alt="" aria-hidden="true" loading="lazy" /><img className="mask-portrait-image" src={mask.avatarUrl} alt={mask.name} loading="lazy" /></>
           : <span className="dashboard-mask-symbol">{mask.symbol || symbols[index % symbols.length]}</span>}
         <span className="dashboard-mask-ordinal">{String(index + 1).padStart(2, '0')}</span>
         <span className="dashboard-mask-arrow"><FaArrowRight /></span>

@@ -3,6 +3,8 @@ import { FaReact } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
 import { masksApi } from '../../api/masks'
 import { apiError } from '../../api/client'
+import { conversationsApi } from '../../api/conversations'
+import TypingIndicator from '../../components/TypingIndicator'
 import '../../App.css'
 
 const featuredMasks = [
@@ -32,6 +34,7 @@ function App() {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState([])
   const [conversationId, setConversationId] = useState(null)
+  const [loadingConversation, setLoadingConversation] = useState(false)
   const [sending, setSending] = useState(false)
   const [notice, setNotice] = useState('')
 
@@ -49,12 +52,24 @@ function App() {
     setSelected(mask)
     setMessages([])
     setConversationId(null)
+    setLoadingConversation(Boolean(window.localStorage.getItem('time-mask-token')) && Boolean(mask.id))
     setNotice('')
   }
 
+  useEffect(() => {
+    if (!selected?.id || !window.localStorage.getItem('time-mask-token')) return
+    let active = true
+    conversationsApi.byMask(selected.id).then((saved) => {
+      if (!active) return
+      setConversationId(saved.conversationId)
+      setMessages(saved.messages)
+    }).catch(() => {}).finally(() => { if (active) setLoadingConversation(false) })
+    return () => { active = false }
+  }, [selected?.id])
+
   async function sendMessage(event) {
     event.preventDefault()
-    if (!message.trim() || sending || !selected?.id) return
+    if (!message.trim() || sending || loadingConversation || !selected?.id) return
     if (!window.localStorage.getItem('time-mask-token')) {
       navigate('/login')
       return
@@ -104,12 +119,12 @@ function App() {
               <div className="chat-messages" aria-live="polite">
                 {messages.length === 0 && <div className="welcome-message"><div className="welcome-spark"><Icon name="spark" size={22} /></div><p className="eyebrow">THE FIRST QUESTION IS YOURS</p><h3>What would you like to ask {selected.name.split(' ')[0]}?</h3><p>Explore an idea, ask about their time, or simply begin with hello.</p></div>}
                 {messages.map((item, index) => <div key={`${index}-${item.role}`} className={`message-row ${item.role}`}><span className="message-author">{item.role === 'assistant' ? selected.name : 'You'}</span><div className="message-bubble">{item.content}</div></div>)}
-                {sending && <div className="message-row assistant"><span className="message-author">{selected.name}</span><div className="message-bubble typing"><i/><i/><i/></div></div>}
+                {sending && <div className="message-row assistant"><span className="message-author">{selected.name}</span><TypingIndicator name={selected.name} className="message-bubble" /></div>}
               </div>
               {notice && <p className="inline-notice">{notice}</p>}
               <form className="composer" onSubmit={sendMessage}>
-                <input value={message} onChange={(event) => setMessage(event.target.value)} placeholder={`Write to ${selected.name}…`} aria-label="Your message" />
-                <button type="submit" disabled={!message.trim() || sending || !selected.id} aria-label="Send message"><Icon name="send" /></button>
+                <input value={message} onChange={(event) => setMessage(event.target.value)} placeholder={loadingConversation ? 'Resuming your conversation…' : `Write to ${selected.name}…`} aria-label="Your message" disabled={loadingConversation} />
+                <button type="submit" disabled={!message.trim() || sending || loadingConversation || !selected.id} aria-label="Send message"><Icon name="send" /></button>
               </form>
               {!selected.id && <p className="backend-hint">Connect the backend and add a mask to begin a live conversation.</p>}
               {selected.id && !window.localStorage.getItem('time-mask-token') && <Link className="auth-inline-link" to="/login">Sign in to start your conversation</Link>}
@@ -137,7 +152,7 @@ function App() {
           <section className="collection-section" id="collection">
             <div className="section-heading"><div><p className="eyebrow">A GROWING COLLECTION</p><h2>Who will you <em>meet?</em></h2></div><label className="search-box"><Icon name="search"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a voice" aria-label="Search historical masks"/><kbd>⌘ K</kbd></label></div>
             <div className="mask-grid">{visibleMasks.map((mask, index) => <button className="mask-card" key={mask.id || mask.name} onClick={() => openMask(mask)}>
-              <div className={`mask-art mask-${mask.tone}`}>{mask.avatarUrl ? <img className="mask-portrait-image" src={mask.avatarUrl} alt="" loading="lazy" /> : <><div className="mask-halo"/><span className="mask-symbol">{mask.symbol}</span></>}<span className="card-index">0{index + 1}</span><span className="card-arrow"><Icon name="arrow" size={16}/></span></div>
+              <div className={`mask-art mask-${mask.tone}`}>{mask.avatarUrl ? <><img className="mask-portrait-backdrop" src={mask.avatarUrl} alt="" aria-hidden="true" loading="lazy"/><img className="mask-portrait-image" src={mask.avatarUrl} alt="" loading="lazy"/></> : <><div className="mask-halo"/><span className="mask-symbol">{mask.symbol}</span></>}<span className="card-index">0{index + 1}</span><span className="card-arrow"><Icon name="arrow" size={16}/></span></div>
               <div className="mask-card-copy"><p className="mask-era">{mask.era || 'A voice from history'}</p><h3>{mask.name}</h3>{mask.profession && <p className="mask-profession">{mask.profession}</p>}<p className="mask-line">{mask.line}</p></div>
             </button>)}</div>
             {visibleMasks.length === 0 && <p className="empty-search">No voices found. Try another name or era.</p>}

@@ -17,7 +17,7 @@ router.post("/:id/chat", chatLimiter, asyncRoute(async (req, res) => {
   const userMessage = requiredString(req.body?.message, "message", 8000);
   const requestedConversationId = req.body?.conversationId || null;
   const masks = await rowsFromQuery(
-    "SELECT id, name, era, character_spec FROM masks WHERE id = ? LIMIT 1",
+    "SELECT id, name, era, profession, character_spec FROM masks WHERE id = ? LIMIT 1",
     [req.params.id]
   );
   const mask = masks?.[0];
@@ -31,17 +31,26 @@ router.post("/:id/chat", chatLimiter, asyncRoute(async (req, res) => {
     );
     if (!owned?.length) return res.status(404).json({ error: "Conversation not found" });
   } else {
-    const created = await db.execute(
-      "INSERT INTO conversations (mask_id, user_id) VALUES (?, ?)",
+    const existing = await rowsFromQuery(
+      "SELECT id FROM conversations WHERE mask_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
       [mask.id, req.user.id]
     );
-    conversationId = created?.insertId || created?.id;
+    conversationId = existing?.[0]?.id;
+    if (!conversationId) {
+      const created = await db.execute(
+        "INSERT INTO conversations (mask_id, user_id) VALUES (?, ?)",
+        [mask.id, req.user.id]
+      );
+      conversationId = created?.insertId || created?.id;
+    }
   }
   if (!conversationId) throw new Error("Could not create conversation");
 
   const history = await rowsFromQuery(
-    "SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY id DESC LIMIT 20",
-    [conversationId]
+    `SELECT msg.role, msg.content FROM messages msg
+     JOIN conversations c ON c.id = msg.conversation_id
+     WHERE c.user_id = ? AND c.mask_id = ? ORDER BY msg.id DESC LIMIT 40`,
+    [req.user.id, mask.id]
   );
   const reply = await generatePersonaReply(mask, (history || []).reverse(), userMessage);
 

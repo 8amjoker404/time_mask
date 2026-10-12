@@ -7,9 +7,12 @@ const router = Router();
 router.get("/", asyncRoute(async (req, res) => {
   const rows = await rowsFromQuery(
     `SELECT c.id, c.mask_id, c.created_at, m.name AS mask_name,
-      (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_message
+      (SELECT msg.content FROM messages msg JOIN conversations prior ON prior.id = msg.conversation_id
+       WHERE prior.user_id = c.user_id AND prior.mask_id = c.mask_id ORDER BY msg.id DESC LIMIT 1) AS last_message
      FROM conversations c JOIN masks m ON m.id = c.mask_id
-     WHERE c.user_id = ? ORDER BY c.id DESC`,
+     WHERE c.user_id = ?
+       AND c.id = (SELECT MAX(latest.id) FROM conversations latest WHERE latest.user_id = c.user_id AND latest.mask_id = c.mask_id)
+     ORDER BY c.id DESC`,
     [req.user.id]
   );
   res.json({ conversations: rows.map((row) => ({
@@ -21,6 +24,32 @@ router.get("/", asyncRoute(async (req, res) => {
   })) });
 }));
 
+// GET /api/conversations/by-mask/:maskId — resume this user's conversation with a character.
+router.get("/by-mask/:maskId", asyncRoute(async (req, res) => {
+  const rows = await rowsFromQuery(
+    "SELECT id FROM conversations WHERE user_id = ? AND mask_id = ? ORDER BY id DESC LIMIT 1",
+    [req.user.id, req.params.maskId]
+  );
+  const conversationId = rows?.[0]?.id || null;
+  if (!conversationId) return res.json({ conversationId: null, messages: [] });
+
+  const messages = await rowsFromQuery(
+    `SELECT msg.id, msg.role, msg.content, msg.created_at FROM messages msg
+     JOIN conversations c ON c.id = msg.conversation_id
+     WHERE c.user_id = ? AND c.mask_id = ? ORDER BY msg.id ASC`,
+    [req.user.id, req.params.maskId]
+  );
+  res.json({
+    conversationId,
+    messages: messages.map((row) => ({
+      id: row.id,
+      role: row.role,
+      content: row.content,
+      createdAt: row.created_at,
+    })),
+  });
+}));
+
 // GET /api/conversations/:id/messages
 router.get("/:id/messages", asyncRoute(async (req, res) => {
   const conversation = await rowsFromQuery(
@@ -29,8 +58,12 @@ router.get("/:id/messages", asyncRoute(async (req, res) => {
   );
   if (!conversation?.length) return res.status(404).json({ error: "Conversation not found" });
   const rows = await rowsFromQuery(
-    "SELECT id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY id ASC",
-    [req.params.id]
+    `SELECT msg.id, msg.role, msg.content, msg.created_at FROM messages msg
+     JOIN conversations c ON c.id = msg.conversation_id
+     WHERE c.user_id = ? AND c.mask_id = (
+       SELECT mask_id FROM conversations WHERE id = ? AND user_id = ? LIMIT 1
+     ) ORDER BY msg.id ASC`,
+    [req.user.id, req.params.id, req.user.id]
   );
   res.json({ messages: rows.map((row) => ({
     id: row.id,

@@ -4,6 +4,7 @@ import { FaArrowRight, FaPaperPlane, FaPlus, FaUsers } from 'react-icons/fa6'
 import { groupsApi } from '../../api/groups'
 import { masksApi } from '../../api/masks'
 import { apiError, notifyToast } from '../../api/client'
+import TypingIndicator from '../../components/TypingIndicator'
 
 function GroupChatsPage() {
   const { groupId } = useParams()
@@ -74,7 +75,7 @@ function GroupChatsPage() {
             <div className="group-chat-heading"><div className="group-list-icon"><FaUsers /></div><div><h2>{activeGroup.name}</h2><p>{activeGroup.memberCount} historical voices</p></div></div>
             <div className="group-messages" aria-live="polite">
               {messages.length ? messages.map((item, index) => <div className={`group-message ${item.role}`} key={item.id || `${item.role}-${index}`}><small>{item.role === 'user' ? 'You' : item.maskName}</small><p>{item.content}</p></div>) : <div className="group-empty"><span>✳</span><h3>Start the conversation.</h3><p>Ask your group a question. Each mask will bring their own perspective.</p></div>}
-              {busy && <p className="group-thinking">The group is gathering its thoughts…</p>}
+              {busy && <TypingIndicator name="The group" className="group-thinking" />}
               <div ref={tailRef} />
             </div>
             <form className="group-composer" onSubmit={sendMessage}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ask the group something…"/><button disabled={!draft.trim() || busy} aria-label="Send to group"><FaPaperPlane /></button></form>
