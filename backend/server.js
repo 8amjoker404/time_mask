@@ -5,6 +5,8 @@ const express = require("express");
 const helmet = require("helmet");
 const { requireAuth, assertAuthConfig } = require("./middleware/auth");
 const authRoutes = require("./routes/auth");
+const twinsRoutes = require("./routes/twins");
+const groupsRoutes = require("./routes/groups");
 const maskRoutes = require("./routes/masks");
 const conversationRoutes = require("./routes/conversations");
 const chatRoutes = require("./routes/chat");
@@ -41,6 +43,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/masks", maskRoutes);
 app.use("/api/masks", requireAuth, chatRoutes);
 app.use("/api/conversations", requireAuth, conversationRoutes);
+app.use("/api/twins", requireAuth, twinsRoutes);
+app.use("/api/groups", requireAuth, groupsRoutes);
 app.use("/api/settings", settingsRoutes);
 
 app.use((_req, res) => res.status(404).json({ error: "Route not found" }));
