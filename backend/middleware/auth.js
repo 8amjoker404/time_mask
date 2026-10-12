@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
-  if (!secret || secret.length < 32) {
+  if (!secret || secret.length < 32 || secret.startsWith("replace-with-")) {
     throw new Error("JWT_SECRET must be set to a random value with at least 32 characters");
   }
   return secret;

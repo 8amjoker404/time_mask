@@ -1,14 +1,15 @@
 require("dotenv").config();
 const db = require("../db");
+const { rowsFromQuery } = require("../lib/db-helpers");
 
 async function promote() {
   const email = process.argv[2]?.trim().toLowerCase();
   if (!email) {
     throw new Error("Usage: npm run promote-admin -- user@example.com");
   }
-  const result = await db.execute("UPDATE users SET role = 'admin' WHERE email = ?", [email]);
-  const changed = result?.affectedRows ?? result?.rowCount;
-  if (changed === 0) throw new Error(`No account found for ${email}`);
+  const users = await rowsFromQuery("SELECT id FROM users WHERE email = ? LIMIT 1", [email]);
+  if (!users?.length) throw new Error(`No account found for ${email}`);
+  await db.execute("UPDATE users SET role = 'admin' WHERE id = ?", [users[0].id]);
   console.log(`Administrator access granted to ${email}`);
   process.exitCode = 0;
 }
