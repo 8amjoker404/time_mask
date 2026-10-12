@@ -31,7 +31,7 @@ router.post("/", asyncRoute(async (req, res) => {
   if (!maskIds.length || maskIds.length > 6) {
     return res.status(400).json({ error: "Choose between 1 and 6 historical masks" });
   }
-  const masks = await rowsFromQuery("SELECT id FROM masks WHERE id IN (?)", [maskIds]);
+  const masks = await rowsFromQuery("SELECT id FROM masks WHERE id IN (?) AND owner_user_id IS NULL", [maskIds]);
   if (masks.length !== maskIds.length) return res.status(400).json({ error: "One or more selected masks were not found" });
   const created = await db.execute("INSERT INTO chat_groups (user_id, name) VALUES (?, ?)", [req.user.id, name]);
   const groupId = created.insertId;

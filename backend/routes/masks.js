@@ -20,7 +20,7 @@ function publicMask(row) {
 // GET /api/masks
 router.get("/", asyncRoute(async (_req, res) => {
   const rows = await rowsFromQuery(
-    "SELECT id, name, era, profession, summary, avatar_url, character_spec, created_at FROM masks ORDER BY name"
+    "SELECT id, name, era, profession, summary, avatar_url, character_spec, created_at FROM masks WHERE owner_user_id IS NULL ORDER BY name"
   );
   res.json({ masks: rows.map(publicMask) });
 }));
@@ -28,7 +28,7 @@ router.get("/", asyncRoute(async (_req, res) => {
 // GET /api/masks/:id
 router.get("/:id", asyncRoute(async (req, res) => {
   const rows = await rowsFromQuery(
-    "SELECT id, name, era, profession, summary, avatar_url, character_spec, created_at FROM masks WHERE id = ? LIMIT 1",
+    "SELECT id, name, era, profession, summary, avatar_url, character_spec, created_at FROM masks WHERE id = ? AND owner_user_id IS NULL LIMIT 1",
     [req.params.id]
   );
   if (!rows?.length) return res.status(404).json({ error: "Mask not found" });

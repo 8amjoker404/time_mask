@@ -35,7 +35,7 @@ router.put("/users/:id/password", asyncRoute(async (req, res) => {
 router.put("/masks/:id", asyncRoute(async (req, res) => {
   const { name, era, profession, summary, avatarUrl, characterSpec } = req.body || {};
   const [result] = await db.execute(
-    "UPDATE masks SET name = ?, era = ?, profession = ?, summary = ?, avatar_url = ?, character_spec = ? WHERE id = ?",
+    "UPDATE masks SET name = ?, era = ?, profession = ?, summary = ?, avatar_url = ?, character_spec = ? WHERE id = ? AND owner_user_id IS NULL",
     [requiredString(name, "name", 160), typeof era === "string" ? era.trim().slice(0, 160) || null : null,
       typeof profession === "string" ? profession.trim().slice(0, 160) || null : null,
       typeof summary === "string" ? summary.trim().slice(0, 2000) || null : null,
@@ -43,7 +43,7 @@ router.put("/masks/:id", asyncRoute(async (req, res) => {
       requiredString(characterSpec, "characterSpec", 12000), req.params.id]
   );
   if (!result.affectedRows) {
-    const rows = await rowsFromQuery("SELECT id FROM masks WHERE id = ? LIMIT 1", [req.params.id]);
+    const rows = await rowsFromQuery("SELECT id FROM masks WHERE id = ? AND owner_user_id IS NULL LIMIT 1", [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: "Character not found" });
   }
   res.json({ ok: true });
@@ -51,7 +51,7 @@ router.put("/masks/:id", asyncRoute(async (req, res) => {
 
 // DELETE /api/admin/masks/:id
 router.delete("/masks/:id", asyncRoute(async (req, res) => {
-  const [result] = await db.execute("DELETE FROM masks WHERE id = ?", [req.params.id]);
+  const [result] = await db.execute("DELETE FROM masks WHERE id = ? AND owner_user_id IS NULL", [req.params.id]);
   if (!result.affectedRows) return res.status(404).json({ error: "Character not found" });
   res.json({ ok: true });
 }));

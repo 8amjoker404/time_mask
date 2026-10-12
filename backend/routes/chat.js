@@ -17,11 +17,27 @@ router.post("/:id/chat", chatLimiter, asyncRoute(async (req, res) => {
   const userMessage = requiredString(req.body?.message, "message", 8000);
   const requestedConversationId = req.body?.conversationId || null;
   const masks = await rowsFromQuery(
-    "SELECT id, name, era, profession, character_spec FROM masks WHERE id = ? LIMIT 1",
-    [req.params.id]
+    `SELECT id, name, era, profession, character_spec, gender, owner_user_id FROM masks m
+     WHERE id = ? AND (owner_user_id IS NULL OR (owner_user_id = ? AND EXISTS (
+       SELECT 1 FROM user_twins t WHERE t.mask_id = m.id AND t.user_id = ?
+     ))) LIMIT 1`,
+    [req.params.id, req.user.id, req.user.id]
   );
   const mask = masks?.[0];
   if (!mask) return res.status(404).json({ error: "Mask not found" });
+
+  const twinRows = await rowsFromQuery(
+    "SELECT interview_answers, interview_completed_at FROM user_twins WHERE user_id = ? AND mask_id = ? LIMIT 1",
+    [req.user.id, mask.id]
+  );
+  const twinRow = twinRows?.[0];
+  if (twinRow && !twinRow.interview_completed_at) {
+    return res.status(409).json({ error: "Finish your twin's friendly introduction before chatting" });
+  }
+  let userProfile = null;
+  if (twinRow?.interview_answers) {
+    try { userProfile = JSON.parse(twinRow.interview_answers); } catch { userProfile = null; }
+  }
 
   let conversationId = requestedConversationId;
   if (conversationId) {
@@ -52,7 +68,7 @@ router.post("/:id/chat", chatLimiter, asyncRoute(async (req, res) => {
      WHERE c.user_id = ? AND c.mask_id = ? ORDER BY msg.id DESC LIMIT 40`,
     [req.user.id, mask.id]
   );
-  const reply = await generatePersonaReply(mask, (history || []).reverse(), userMessage);
+  const reply = await generatePersonaReply(mask, (history || []).reverse(), userMessage, userProfile);
 
   await db.execute(
     "INSERT INTO messages (conversation_id, role, content) VALUES (?, 'user', ?), (?, 'assistant', ?)",

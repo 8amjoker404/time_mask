@@ -30,7 +30,7 @@ function DashboardPage() {
       </div>
 
       <section className="dashboard-stat-grid" aria-label="Your activity">
-        <Link to="/twins" className="dashboard-stat-card"><FaMasksTheater /><span>YOUR TWINS</span><strong>{stats.twins}</strong><small>saved historical masks</small></Link>
+        <Link to="/twins" className="dashboard-stat-card"><FaMasksTheater /><span>YOUR TWINS</span><strong>{stats.twins}</strong><small>personal AI companions</small></Link>
         <Link to="/groups" className="dashboard-stat-card"><FaUsers /><span>GROUP CHATS</span><strong>{stats.groups}</strong><small>salons you created</small></Link>
         <div className="dashboard-stat-card"><FaComments /><span>CONVERSATIONS</span><strong>{stats.conversations}</strong><small>one to one chats</small></div>
       </section>
