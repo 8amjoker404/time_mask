@@ -1,5 +1,5 @@
 require("dotenv").config();
-const db = require("../db");
+const db = require("../database");
 const { rowsFromQuery } = require("../lib/db-helpers");
 
 async function promote() {

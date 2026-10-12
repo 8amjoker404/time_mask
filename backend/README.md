@@ -1,20 +1,21 @@
 # Time Mask API
 
-Express API for historical masks, accounts, conversations, and Google AI chat. Database credentials stay in the DBMS Gateway project. The API uses `diamond-sql` through the shared connector in `db.js`.
+Express API for historical masks, accounts, conversations, and Google AI chat. It connects directly to MySQL through a shared `mysql2/promise` pool in `database/index.js`, imported as `db`.
 
 ## Setup
 
-1. Copy `.env.example` to `.env`. Fill in the full Gateway `SITE_ID`, `API_KEY`, and `DBMS_URL`. Set `JWT_SECRET` to a random value of at least 32 characters and set `CORS_ORIGIN` to the frontend origin.
-2. Install and run the API with `npm install` and `npm run dev` (or `npm start`).
-3. Apply migrations `001_initial_schema.sql` and `002_users_and_conversation_ownership.sql` to the project database through your DBMS Gateway workflow.
-4. Register an account from the app, then promote the intended operator account with `npm run promote-admin -- person@example.com`. Promotion requires a working Gateway connection and should be run only by an operator with server access.
-5. An administrator can set the Google key in the frontend AI settings. It is kept in backend memory and resets to `GOOGLE_API_KEY` from `.env` on restart.
+1. Copy `.env.example` to `.env` and set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`. The backend connects directly to this MySQL database.
+2. Set `JWT_SECRET` to a random value of at least 32 characters and set `CORS_ORIGIN` to the frontend origin.
+3. Install and run the API with `npm install` and `npm run dev` (or `npm start`).
+4. Apply migrations `migrations/001_initial_schema.sql` and `migrations/002_users_and_conversation_ownership.sql` to the database using your SQL client.
+5. Register an account from the app, then promote the intended operator account with `npm run promote-admin -- person@example.com`.
+6. An administrator can set the Google key in the frontend AI settings. It is kept in backend memory and resets to `GOOGLE_API_KEY` from `.env` on restart.
 
 ## Routes
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| GET | `/health` | Public | DBMS Gateway status |
+| GET | `/health` | Public | SQL database connectivity |
 | POST | `/api/auth/register` | Public | Create an account; passwords are bcrypt hashed |
 | POST | `/api/auth/login` | Public | Return a 7 day JWT bearer token |
 | GET | `/api/auth/me` | Signed in | Current account |
@@ -29,7 +30,3 @@ Express API for historical masks, accounts, conversations, and Google AI chat. D
 | PUT | `/api/settings/llm` | Admin | Set Google API key in server memory |
 
 Protected routes accept `Authorization: Bearer <token>`. Conversations are scoped to their owner. Auth and chat endpoints are rate limited. Set `CORS_ORIGIN` to a comma-separated allowlist for production deployments.
-
-## Gateway client contract
-
-The local `diamond-sql.js` client currently calls `GET /api/status`, `POST /api/query`, and `POST /api/execute`, using `X-Site-Id`, `X-Api-Key`, and a `siteId` payload. Update that client if your Gateway uses different paths or request fields.

@@ -1,4 +1,4 @@
-const db = require("../db");
+const db = require("../database");
 
 async function rowsFromQuery(sql, params = []) {
   const result = await db.query(sql, params);

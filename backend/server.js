@@ -9,7 +9,7 @@ const maskRoutes = require("./routes/masks");
 const conversationRoutes = require("./routes/conversations");
 const chatRoutes = require("./routes/chat");
 const settingsRoutes = require("./routes/settings");
-const db = require("./db");
+const db = require("./database");
 
 const app = express();
 const port = Number(process.env.PORT || 4001);
@@ -30,10 +30,10 @@ app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", async (_req, res, next) => {
   try {
-    const gateway = await db.status();
-    res.json({ ok: true, gateway });
+    const database = await db.status();
+    res.json({ ok: true, database });
   } catch (error) {
-    res.status(503).json({ ok: false, error: error.message || "DBMS Gateway unavailable" });
+    res.status(503).json({ ok: false, error: error.message || "SQL database unavailable" });
   }
 });
 
