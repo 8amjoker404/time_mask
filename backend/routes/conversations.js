@@ -3,6 +3,7 @@ const { asyncRoute, rowsFromQuery } = require("../lib/db-helpers");
 
 const router = Router();
 
+// GET /api/conversations
 router.get("/", asyncRoute(async (req, res) => {
   const rows = await rowsFromQuery(
     `SELECT c.id, c.mask_id, c.created_at, m.name AS mask_name,
@@ -20,6 +21,7 @@ router.get("/", asyncRoute(async (req, res) => {
   })) });
 }));
 
+// GET /api/conversations/:id/messages
 router.get("/:id/messages", asyncRoute(async (req, res) => {
   const conversation = await rowsFromQuery(
     "SELECT id FROM conversations WHERE id = ? AND user_id = ? LIMIT 1",

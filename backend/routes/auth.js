@@ -21,6 +21,7 @@ function issueSession(res, user, status = 200) {
   return res.status(status).json({ token: createToken(user), user: publicUser(user) });
 }
 
+// POST /api/auth/register
 router.post("/register", authLimiter, asyncRoute(async (req, res) => {
   const name = requiredString(req.body?.name, "name", 100);
   const email = requiredString(req.body?.email, "email", 254).toLowerCase();
@@ -41,6 +42,7 @@ router.post("/register", authLimiter, asyncRoute(async (req, res) => {
   return issueSession(res, rows[0], 201);
 }));
 
+// POST /api/auth/login
 router.post("/login", authLimiter, asyncRoute(async (req, res) => {
   const email = requiredString(req.body?.email, "email", 254).toLowerCase();
   const password = requiredString(req.body?.password, "password", 200);
@@ -52,12 +54,14 @@ router.post("/login", authLimiter, asyncRoute(async (req, res) => {
   return issueSession(res, user);
 }));
 
+// GET /api/auth/me
 router.get("/me", requireAuth, asyncRoute(async (req, res) => {
   const rows = await rowsFromQuery("SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1", [req.user.id]);
   if (!rows?.length) return res.status(401).json({ error: "Account no longer exists" });
   res.json({ user: publicUser(rows[0]) });
 }));
 
+// POST /api/auth/logout
 router.post("/logout", requireAuth, (_req, res) => {
   // JWTs are stateless; clients discard their bearer token on logout.
   res.json({ ok: true });

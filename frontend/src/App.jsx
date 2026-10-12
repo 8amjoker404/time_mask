@@ -12,6 +12,8 @@ import GroupChatsPage from './pages/GroupChats/GroupChatsPage'
 import SettingsPage from './pages/Settings/SettingsPage'
 import ChatPage from './pages/Chat/ChatPage'
 import NotFound from './pages/NotFound/NotFound'
+import RequireAdmin from './pages/RequireAdmin/RequireAdmin'
+import AdminPage from './pages/Admin/AdminPage'
 
 function HomeRoute() {
   const { user, loading } = useAuth()
@@ -33,6 +35,9 @@ function AppRoutes() {
           <Route path="/groups/:groupId" element={<GroupChatsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/chat/:maskId" element={<ChatPage />} />
+          <Route element={<RequireAdmin />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<NotFound />} />

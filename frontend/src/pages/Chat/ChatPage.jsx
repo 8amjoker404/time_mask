@@ -46,7 +46,7 @@ function ChatPage() {
       <Link className="dashboard-back-link" to="/explore"><FaArrowLeft /> Explore</Link>
       {error && <p className="dashboard-error">{error}</p>}
       <section className="one-chat-panel">
-        <header className="one-chat-heading"><span className="dashboard-mask-monogram">{mask?.name?.slice(0, 1) || '✳'}</span><div><p className="dashboard-eyebrow">A CONVERSATION ACROSS TIME</p><h1>{mask?.name || 'Loading mask…'}</h1><small>{mask?.era}</small></div></header>
+        <header className="one-chat-heading"><span className="dashboard-mask-monogram">{mask?.avatarUrl ? <img src={mask.avatarUrl} alt="" /> : mask?.name?.slice(0, 1) || '✳'}</span><div><p className="dashboard-eyebrow">A CONVERSATION ACROSS TIME</p><h1>{mask?.name || 'Loading mask…'}</h1><small>{[mask?.profession, mask?.era].filter(Boolean).join(' · ')}</small></div></header>
         <div className="one-chat-messages" aria-live="polite">
           {messages.length ? messages.map((item, index) => <div className={`group-message ${item.role}`} key={item.id || `${item.role}-${index}`}><small>{item.role === 'user' ? 'You' : mask?.name}</small><p>{item.content}</p></div>) : <div className="group-empty"><span>✳</span><h3>Begin with a question.</h3><p>Ask about an idea, a moment in history, or simply say hello.</p></div>}
           {busy && <p className="group-thinking">{mask?.name} is considering your question…</p>}<div ref={tailRef}/>

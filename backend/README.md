@@ -13,6 +13,8 @@ Express API for historical masks, accounts, conversations, and Google AI chat. I
 
 ## Routes
 
+Each Express route handler has a one-line comment immediately above it with its HTTP method and full mounted API path (for example, `// GET /api/admin/users`). Keep this convention for new routes.
+
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
 | GET | `/health` | Public | SQL database connectivity |
@@ -35,5 +37,10 @@ Express API for historical masks, accounts, conversations, and Google AI chat. I
 | POST | `/api/groups/:id/messages` | Owner | Send a message and get responses from each mask |
 | GET | `/api/settings/llm` | Public | Google model and key configured status |
 | PUT | `/api/settings/llm` | Admin | Set Google API key in server memory |
+| GET | `/api/admin/users` | Admin | List users |
+| DELETE | `/api/admin/users/:id` | Admin | Delete a user and their owned data |
+| PUT | `/api/admin/users/:id/password` | Admin | Set a user's password |
+| PUT | `/api/admin/masks/:id` | Admin | Update a character |
+| DELETE | `/api/admin/masks/:id` | Admin | Delete a character |
 
 Protected routes accept `Authorization: Bearer <token>`. Conversations are scoped to their owner. Auth and chat endpoints are rate limited. Set `CORS_ORIGIN` to a comma-separated allowlist for production deployments.

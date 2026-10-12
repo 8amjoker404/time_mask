@@ -12,6 +12,7 @@ const chatLimiter = rateLimit({
   message: { error: "Please wait a moment before sending another message" },
 });
 
+// POST /api/masks/:id/chat
 router.post("/:id/chat", chatLimiter, asyncRoute(async (req, res) => {
   const userMessage = requiredString(req.body?.message, "message", 8000);
   const requestedConversationId = req.body?.conversationId || null;

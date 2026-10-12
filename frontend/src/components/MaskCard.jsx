@@ -9,7 +9,9 @@ function MaskCard({ mask, index = 0, saved = false, onToggleSaved }) {
   return (
     <article className="dashboard-mask-card">
       <Link to={`/chat/${mask.id}`} className={`dashboard-mask-art mask-${tone}`} aria-label={`Start a conversation with ${mask.name}`}>
-        <span className="dashboard-mask-symbol">{mask.symbol || symbols[index % symbols.length]}</span>
+        {mask.avatarUrl
+          ? <img className="mask-portrait-image" src={mask.avatarUrl} alt={mask.name} loading="lazy" />
+          : <span className="dashboard-mask-symbol">{mask.symbol || symbols[index % symbols.length]}</span>}
         <span className="dashboard-mask-ordinal">{String(index + 1).padStart(2, '0')}</span>
         <span className="dashboard-mask-arrow"><FaArrowRight /></span>
       </Link>
@@ -21,6 +23,7 @@ function MaskCard({ mask, index = 0, saved = false, onToggleSaved }) {
             {saved ? <FaBookmark /> : <FaRegBookmark />}
           </button>}
         </div>
+        {mask.profession && <p className="dashboard-mask-profession">{mask.profession}</p>}
         <p>{mask.summary || 'Meet a new perspective from another time.'}</p>
       </div>
     </article>

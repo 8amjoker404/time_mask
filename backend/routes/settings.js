@@ -5,6 +5,7 @@ const { requiredString } = require("../lib/db-helpers");
 const router = Router();
 const model = process.env.GOOGLE_MODEL || "gemini-2.5-flash";
 
+// GET /api/settings/llm
 router.get("/llm", (_req, res) => {
   res.json({
     provider: "google",
@@ -13,6 +14,7 @@ router.get("/llm", (_req, res) => {
   });
 });
 
+// PUT /api/settings/llm
 router.put("/llm", requireAuth, requireAdmin, (req, res, next) => {
   try {
     process.env.RUNTIME_GOOGLE_API_KEY = requiredString(req.body?.apiKey, "apiKey", 500);

@@ -137,8 +137,8 @@ function App() {
           <section className="collection-section" id="collection">
             <div className="section-heading"><div><p className="eyebrow">A GROWING COLLECTION</p><h2>Who will you <em>meet?</em></h2></div><label className="search-box"><Icon name="search"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a voice" aria-label="Search historical masks"/><kbd>⌘ K</kbd></label></div>
             <div className="mask-grid">{visibleMasks.map((mask, index) => <button className="mask-card" key={mask.id || mask.name} onClick={() => openMask(mask)}>
-              <div className={`mask-art mask-${mask.tone}`}><div className="mask-halo"/><span className="mask-symbol">{mask.symbol}</span><span className="card-index">0{index + 1}</span><span className="card-arrow"><Icon name="arrow" size={16}/></span></div>
-              <div className="mask-card-copy"><p className="mask-era">{mask.era || 'A voice from history'}</p><h3>{mask.name}</h3><p className="mask-line">{mask.line}</p></div>
+              <div className={`mask-art mask-${mask.tone}`}>{mask.avatarUrl ? <img className="mask-portrait-image" src={mask.avatarUrl} alt="" loading="lazy" /> : <><div className="mask-halo"/><span className="mask-symbol">{mask.symbol}</span></>}<span className="card-index">0{index + 1}</span><span className="card-arrow"><Icon name="arrow" size={16}/></span></div>
+              <div className="mask-card-copy"><p className="mask-era">{mask.era || 'A voice from history'}</p><h3>{mask.name}</h3>{mask.profession && <p className="mask-profession">{mask.profession}</p>}<p className="mask-line">{mask.line}</p></div>
             </button>)}</div>
             {visibleMasks.length === 0 && <p className="empty-search">No voices found. Try another name or era.</p>}
             <div className="collection-foot"><span>THE PAST IS NOT AS FAR AWAY AS IT SEEMS.</span><span>{String(visibleMasks.length).padStart(2, '0')} VOICES <i>·</i> MORE TO COME</span></div>

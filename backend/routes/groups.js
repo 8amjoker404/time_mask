@@ -6,6 +6,7 @@ const { generatePersonaReply } = require("../services/llm");
 const router = Router();
 const groupChatLimiter = rateLimit({ windowMs: 60 * 1000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false });
 
+// GET /api/groups
 router.get("/", asyncRoute(async (req, res) => {
   const rows = await rowsFromQuery(
     `SELECT g.id, g.name, g.created_at,
@@ -23,6 +24,7 @@ router.get("/", asyncRoute(async (req, res) => {
   })) });
 }));
 
+// POST /api/groups
 router.post("/", asyncRoute(async (req, res) => {
   const name = requiredString(req.body?.name, "name", 120);
   const maskIds = [...new Set(Array.isArray(req.body?.maskIds) ? req.body.maskIds.map(String) : [])];
@@ -39,6 +41,7 @@ router.post("/", asyncRoute(async (req, res) => {
   res.status(201).json({ group: { id: groupId, name, memberCount: masks.length } });
 }));
 
+// GET /api/groups/:id/messages
 router.get("/:id/messages", asyncRoute(async (req, res) => {
   const owned = await rowsFromQuery("SELECT id FROM chat_groups WHERE id = ? AND user_id = ? LIMIT 1", [req.params.id, req.user.id]);
   if (!owned?.length) return res.status(404).json({ error: "Group chat not found" });
@@ -58,6 +61,7 @@ router.get("/:id/messages", asyncRoute(async (req, res) => {
   })) });
 }));
 
+// POST /api/groups/:id/messages
 router.post("/:id/messages", groupChatLimiter, asyncRoute(async (req, res) => {
   const text = requiredString(req.body?.message, "message", 8000);
   const groups = await rowsFromQuery("SELECT id FROM chat_groups WHERE id = ? AND user_id = ? LIMIT 1", [req.params.id, req.user.id]);

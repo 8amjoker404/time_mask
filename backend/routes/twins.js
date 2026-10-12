@@ -3,6 +3,7 @@ const { asyncRoute, db, rowsFromQuery } = require("../lib/db-helpers");
 
 const router = Router();
 
+// GET /api/twins
 router.get("/", asyncRoute(async (req, res) => {
   const rows = await rowsFromQuery(
     `SELECT m.id, m.name, m.era, m.summary, m.avatar_url, m.character_spec, m.created_at, t.created_at AS saved_at
@@ -22,6 +23,7 @@ router.get("/", asyncRoute(async (req, res) => {
   })) });
 }));
 
+// POST /api/twins/:maskId
 router.post("/:maskId", asyncRoute(async (req, res) => {
   const masks = await rowsFromQuery("SELECT id FROM masks WHERE id = ? LIMIT 1", [req.params.maskId]);
   if (!masks?.length) return res.status(404).json({ error: "Mask not found" });
@@ -32,6 +34,7 @@ router.post("/:maskId", asyncRoute(async (req, res) => {
   res.status(201).json({ saved: true, maskId: req.params.maskId });
 }));
 
+// DELETE /api/twins/:maskId
 router.delete("/:maskId", asyncRoute(async (req, res) => {
   await db.execute("DELETE FROM user_twins WHERE user_id = ? AND mask_id = ?", [req.user.id, req.params.maskId]);
   res.json({ saved: false, maskId: req.params.maskId });
