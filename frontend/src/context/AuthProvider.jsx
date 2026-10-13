@@ -37,6 +37,12 @@ function AuthProvider({ children }) {
   }, [])
   const login = useCallback((credentials) => establishSession(() => authApi.login(credentials)), [establishSession])
   const register = useCallback((details) => establishSession(() => authApi.register(details)), [establishSession])
+  const updateProfile = useCallback(async (profile) => {
+    const result = await authApi.updateProfile(profile)
+    setUser(result.user)
+    notifyToast('Your profile has been updated.')
+    return result.user
+  }, [])
   const logout = useCallback(async () => {
     try { await authApi.logout() } catch { /* Discard the local session even when offline. */ }
     window.localStorage.removeItem('time-mask-token')
@@ -44,7 +50,7 @@ function AuthProvider({ children }) {
     notifyToast('You have signed out.')
   }, [])
 
-  const value = useMemo(() => ({ user, loading, login, register, logout }), [user, loading, login, register, logout])
+  const value = useMemo(() => ({ user, loading, login, register, updateProfile, logout }), [user, loading, login, register, updateProfile, logout])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

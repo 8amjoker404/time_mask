@@ -27,7 +27,7 @@ function ChatPage() {
 
   useEffect(() => {
     let active = true
-    Promise.all([masksApi.get(maskId).catch(() => null), twinsApi.interview(maskId)]).then(([publicMask, profile]) => {
+    Promise.all([masksApi.get(maskId, { suppressErrorToast: true }).catch(() => null), twinsApi.interview(maskId)]).then(([publicMask, profile]) => {
       if (!active) return
       if (publicMask || profile.mask) setMask(publicMask || profile.mask)
       else setError('This twin could not be found in your account.')

@@ -91,6 +91,45 @@ router.get("/me", requireAuth, asyncRoute(async (req, res) => {
   res.json({ user: publicUser(rows[0]) });
 }));
 
+// PUT /api/auth/profile
+router.put("/profile", requireAuth, asyncRoute(async (req, res) => {
+  const name = requiredString(req.body?.name, "name", 100);
+  const nickname = typeof req.body?.nickname === "string" ? req.body.nickname.trim().slice(0, 40) || null : null;
+  const gender = req.body?.gender || null;
+  const age = req.body?.age === "" || req.body?.age == null ? null : Number(req.body.age);
+  if (nickname && !/^[a-zA-Z0-9_.-]{3,40}$/.test(nickname)) {
+    return res.status(400).json({ error: "Username must be 3–40 characters and use only letters, numbers, dots, underscores, or hyphens" });
+  }
+  if (gender && !["female", "male", "non_binary", "prefer_not_to_say"].includes(gender)) {
+    return res.status(400).json({ error: "Choose a valid gender option" });
+  }
+  if (age !== null && (!Number.isInteger(age) || age < 13 || age > 120)) {
+    return res.status(400).json({ error: "Age must be a whole number from 13 to 120" });
+  }
+  if (nickname) {
+    const existing = await rowsFromQuery(
+      "SELECT id FROM users WHERE LOWER(nickname) = LOWER(?) AND id <> ? LIMIT 1",
+      [nickname, req.user.id]
+    );
+    if (existing?.length) return res.status(409).json({ error: "That username is already taken" });
+  }
+  try {
+    await db.execute(
+      "UPDATE users SET name = ?, nickname = ?, gender = ?, age = ? WHERE id = ?",
+      [name, nickname, gender, age, req.user.id]
+    );
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "That username is already taken" });
+    throw error;
+  }
+  const rows = await rowsFromQuery(
+    "SELECT id, name, nickname, gender, age, email, role FROM users WHERE id = ? LIMIT 1",
+    [req.user.id]
+  );
+  if (!rows?.length) return res.status(401).json({ error: "Account no longer exists" });
+  res.json({ user: publicUser(rows[0]) });
+}));
+
 // POST /api/auth/logout
 router.post("/logout", requireAuth, (_req, res) => {
   // JWTs are stateless; clients discard their bearer token on logout.

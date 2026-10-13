@@ -38,7 +38,7 @@ function parseResponseError(status, message, provider) {
   return error;
 }
 
-async function generateOpenAIReply(mask, transcript, userProfile) {
+async function generateOpenAIReply(mask, transcript, userProfile, options) {
   const apiKey = process.env.RUNTIME_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   if (!apiKey) {
     const error = new Error("OpenAI API key is not configured. Ask an administrator to update the AI settings.");
@@ -55,7 +55,7 @@ async function generateOpenAIReply(mask, transcript, userProfile) {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
           model,
-          instructions: buildPersonaPrompt(mask, userProfile),
+          instructions: buildPersonaPrompt(mask, userProfile, options),
           input: transcript,
           max_output_tokens: 1200,
         }),
@@ -83,12 +83,15 @@ async function generateOpenAIReply(mask, transcript, userProfile) {
   return reply;
 }
 
-async function generatePersonaReply(mask, history, userMessage, userProfile = null) {
+async function generatePersonaReply(mask, history, userMessage, userProfile = null, options = {}) {
   const provider = getActiveProvider();
-  const transcript = [...(history || []), { role: "user", content: userMessage }]
-    .map((message) => `${message.role === "assistant" ? mask.name : "Visitor"}: ${message.content}`)
+  const transcriptMessages = options.messageInHistory
+    ? (history || [])
+    : [...(history || []), { role: "user", content: userMessage }];
+  const transcript = transcriptMessages
+    .map((message) => `${message.role === "assistant" ? (message.speaker || mask.name) : "Visitor"}: ${message.content}`)
     .join("\n\n");
-  if (provider === "openai") return generateOpenAIReply(mask, transcript, userProfile);
+  if (provider === "openai") return generateOpenAIReply(mask, transcript, userProfile, options);
 
   const apiKey = process.env.RUNTIME_GOOGLE_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) {
@@ -112,7 +115,7 @@ async function generatePersonaReply(mask, history, userMessage, userProfile = nu
             headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
             body: JSON.stringify({
               model,
-              system_instruction: buildPersonaPrompt(mask, userProfile),
+              system_instruction: buildPersonaPrompt(mask, userProfile, options),
               input: transcript,
               generation_config: { max_output_tokens: 1200, thinking_level: "low" },
             }),
