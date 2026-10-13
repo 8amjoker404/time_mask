@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { FaArrowRight, FaPaperPlane, FaPlus, FaUsers } from 'react-icons/fa6'
 import { groupsApi } from '../../api/groups'
 import { masksApi } from '../../api/masks'
-import { apiError, notifyToast } from '../../api/client'
+import { apiError, conversationError, isTemporaryAIError, notifyToast } from '../../api/client'
 import TypingIndicator from '../../components/TypingIndicator'
 
 function GroupChatsPage() {
@@ -68,9 +68,13 @@ function GroupChatsPage() {
     setBusy(true)
     setError('')
     try {
-      const replies = await groupsApi.send(groupId, text)
+      const replies = await groupsApi.send(groupId, text, { suppressErrorToast: true })
       setMessages((current) => [...current, ...replies])
-    } catch (err) { setError(apiError(err)) } finally { setBusy(false) }
+    } catch (err) {
+      setMessages((current) => current.at(-1)?.role === 'user' && current.at(-1)?.content === text ? current.slice(0, -1) : current)
+      setDraft(text)
+      setError(isTemporaryAIError(err) ? 'The group is taking a brief pause. Your conversation is safe, and your message is waiting here for another try.' : conversationError(err, 'The group'))
+    } finally { setBusy(false) }
   }
 
   const activeGroup = groups.find((group) => String(group.id) === groupId)
@@ -105,7 +109,7 @@ function GroupChatsPage() {
   return (
     <div className="dashboard-page group-page">
       <div className="page-title-row"><div><p className="dashboard-eyebrow">A TABLE FOR MANY VOICES</p><h1>Group <em>Chats.</em></h1><p>Bring a few historical minds into the same conversation.</p></div><button className="dashboard-primary-link" onClick={() => setCreateOpen(true)}><FaPlus /> New group</button></div>
-      {error && <p className="dashboard-error">{error}</p>}
+      {error && <p className={error.includes('brief pause') ? 'dashboard-success chat-pause-note' : 'dashboard-error'} role="status">{error}</p>}
       <div className="group-layout">
         <aside className="group-list-panel">
           <div className="group-list-heading"><FaUsers /><span>Your groups</span><b>{groups.length}</b></div>

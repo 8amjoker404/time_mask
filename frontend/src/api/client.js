@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.config?.suppressErrorToast) return Promise.reject(error)
+    if (error.config?.suppressErrorToast && error.response?.status !== 401) return Promise.reject(error)
     if (error.response?.status === 401) {
       window.localStorage.removeItem('time-mask-token')
       window.dispatchEvent(new Event('time-mask:auth-expired'))
@@ -34,6 +34,17 @@ api.interceptors.response.use(
 
 export function apiError(error) {
   return error.response?.data?.error || error.message || 'Something went wrong.'
+}
+
+export function isTemporaryAIError(error) {
+  return error.response?.data?.code === 'AI_TEMPORARILY_UNAVAILABLE'
+}
+
+export function conversationError(error, characterName = 'Your character') {
+  if (isTemporaryAIError(error)) {
+    return `${characterName} is taking a brief pause. Your conversation is safe, and your message is waiting here for another try.`
+  }
+  return apiError(error)
 }
 
 export default api

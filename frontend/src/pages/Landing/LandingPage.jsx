@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { FaReact } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
 import { masksApi } from '../../api/masks'
-import { apiError } from '../../api/client'
+import { conversationError } from '../../api/client'
 import { conversationsApi } from '../../api/conversations'
 import TypingIndicator from '../../components/TypingIndicator'
 import '../../App.css'
@@ -80,11 +80,13 @@ function App() {
     setSending(true)
     setNotice('')
     try {
-      const data = await masksApi.chat(selected.id, { message: text, conversationId })
+      const data = await masksApi.chat(selected.id, { message: text, conversationId }, { suppressErrorToast: true })
       setConversationId(data.conversationId)
       setMessages((current) => [...current, { role: 'assistant', content: data.reply }])
     } catch (error) {
-      setNotice(apiError(error))
+      setMessages((current) => current.at(-1)?.role === 'user' && current.at(-1)?.content === text ? current.slice(0, -1) : current)
+      setMessage(text)
+      setNotice(conversationError(error, selected.name))
     } finally { setSending(false) }
   }
 

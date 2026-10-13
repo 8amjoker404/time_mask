@@ -3,7 +3,7 @@ import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { FaArrowLeft, FaPaperPlane } from 'react-icons/fa6'
 import { masksApi } from '../../api/masks'
 import { conversationsApi } from '../../api/conversations'
-import { apiError } from '../../api/client'
+import { apiError, conversationError } from '../../api/client'
 import TypingIndicator from '../../components/TypingIndicator'
 import { twinsApi } from '../../api/twins'
 import TwinInterview from '../../components/TwinInterview'
@@ -76,10 +76,14 @@ function ChatPage() {
     setBusy(true)
     setError('')
     try {
-      const response = await masksApi.chat(maskId, { message: text, conversationId })
+      const response = await masksApi.chat(maskId, { message: text, conversationId }, { suppressErrorToast: true })
       if (!conversationId) setSearchParams({ conversationId: response.conversationId }, { replace: true })
       else setMessages((current) => [...current, { role: 'assistant', content: response.reply }])
-    } catch (err) { setError(apiError(err)) } finally { setBusy(false) }
+    } catch (err) {
+      setMessages((current) => current.at(-1)?.role === 'user' && current.at(-1)?.content === text ? current.slice(0, -1) : current)
+      setDraft(text)
+      setError(conversationError(err, mask?.name || 'Your character'))
+    } finally { setBusy(false) }
   }
 
   async function saveInterview(answers, completed) {
@@ -90,7 +94,7 @@ function ChatPage() {
   return (
     <div className="dashboard-page chat-page-dashboard">
       <Link className="dashboard-back-link" to={returnPath}><FaArrowLeft /> {returnLabel}</Link>
-      {error && <p className="dashboard-error">{error}</p>}
+      {error && <p className={error.includes('brief pause') ? 'dashboard-success chat-pause-note' : 'dashboard-error'} role="status">{error}</p>}
       <section className="one-chat-panel">
         {twinProfilePending ? <div className="group-empty"><span>✳</span><h3>Preparing your conversation…</h3></div>
           : twinInterview.isTwin && !twinInterview.completed ? <TwinInterview mask={mask || { name: 'Your twin' }} answers={twinInterview.answers} onSave={saveInterview} /> : <>
