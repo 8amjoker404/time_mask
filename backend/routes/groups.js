@@ -41,6 +41,16 @@ router.post("/", asyncRoute(async (req, res) => {
   res.status(201).json({ group: { id: groupId, name, memberCount: masks.length } });
 }));
 
+// DELETE /api/groups/:id — delete an owned group and its messages.
+router.delete("/:id", asyncRoute(async (req, res) => {
+  const [result] = await db.execute(
+    "DELETE FROM chat_groups WHERE id = ? AND user_id = ?",
+    [req.params.id, req.user.id]
+  );
+  if (!result.affectedRows) return res.status(404).json({ error: "Group chat not found" });
+  res.json({ ok: true });
+}));
+
 // GET /api/groups/:id/members
 router.get("/:id/members", asyncRoute(async (req, res) => {
   const owned = await rowsFromQuery("SELECT id FROM chat_groups WHERE id = ? AND user_id = ? LIMIT 1", [req.params.id, req.user.id]);
@@ -107,18 +117,20 @@ router.post("/:id/messages", groupChatLimiter, asyncRoute(async (req, res) => {
 
   const replies = [];
   const context = [...orderedHistory];
+  let messageAddedToContext = false;
   for (const mask of masks) {
     if (!tagged && replies.length >= 2) break;
     const content = await generatePersonaReply(mask, context, text, null, {
       groupChat: true,
       mentioned: tagged,
-      messageInHistory: context.some((message) => message.role === "user" && message.content === text),
+      messageInHistory: messageAddedToContext,
     });
     if (content.trim() === "[[PASS]]") continue;
     const reply = { mask, content };
     replies.push(reply);
-    if (!context.some((message) => message.role === "user" && message.content === text)) {
+    if (!messageAddedToContext) {
       context.push({ role: "user", content: text });
+      messageAddedToContext = true;
     }
     context.push({ role: "assistant", speaker: mask.name, content });
   }
