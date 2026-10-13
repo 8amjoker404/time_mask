@@ -66,6 +66,10 @@ app.use((error, _req, res, _next) => {
   if (error.message === "Origin is not allowed by CORS") {
     return res.status(403).json({ error: error.message });
   }
+  if (error.code === "AI_TEMPORARILY_UNAVAILABLE") {
+    console.warn("The active AI provider is temporarily at capacity.");
+    return res.status(error.status).json({ error: error.message, code: error.code });
+  }
   console.error(error);
   return res.status(error.status || 500).json({ error: error.message || "Internal server error" });
 });

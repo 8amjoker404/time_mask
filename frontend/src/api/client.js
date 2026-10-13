@@ -18,6 +18,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.config?.suppressErrorToast) return Promise.reject(error)
     if (error.response?.status === 401) {
       window.localStorage.removeItem('time-mask-token')
       window.dispatchEvent(new Event('time-mask:auth-expired'))

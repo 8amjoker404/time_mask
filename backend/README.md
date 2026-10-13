@@ -9,7 +9,7 @@ Express API for historical masks, accounts, conversations, and Google AI chat. I
 3. Install and run the API with `npm install` and `npm run dev` (or `npm start`).
 4. Apply pending SQL migrations with `npm run migrate`.
 5. Register an account from the app, then promote the intended operator account with `npm run promote-admin -- person@example.com`.
-6. An administrator can set the Google key in the frontend AI settings. It is kept in backend memory and resets to `GOOGLE_API_KEY` from `.env` on restart. Chat uses the Gemini Interactions API with `gemini-3.8-flash` by default; set `GOOGLE_MODEL` to override it. Temporary capacity errors are retried once. Add comma-separated model names to `GOOGLE_MODEL_FALLBACKS` to enable fallback models.
+6. An administrator can choose Google Gemini or OpenAI, set the model, and replace that provider's API key in Settings. Provider, model, and keys changed in the UI stay in backend memory and reset from `.env` when the server restarts. Google defaults to `gemini-3.8-flash` and can try configured fallback models during temporary capacity errors. OpenAI defaults to `gpt-4o-mini`.
 
 ## Routes
 
