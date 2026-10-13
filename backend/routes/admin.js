@@ -9,7 +9,7 @@ router.use(requireAuth, requireAdmin);
 
 // GET /api/admin/users
 router.get("/users", asyncRoute(async (_req, res) => {
-  const users = await rowsFromQuery("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
+  const users = await rowsFromQuery("SELECT id, name, nickname, gender, age, email, role, created_at FROM users ORDER BY created_at DESC");
   res.json({ users });
 }));
 

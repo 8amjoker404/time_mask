@@ -4,12 +4,17 @@ const { requiredString } = require("../lib/db-helpers");
 
 const router = Router();
 const model = process.env.GOOGLE_MODEL || "gemini-3.8-flash";
+const fallbackModels = (process.env.GOOGLE_MODEL_FALLBACKS || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 
 // GET /api/settings/llm
 router.get("/llm", (_req, res) => {
   res.json({
     provider: "google",
     model,
+    fallbackModels,
     configured: Boolean(process.env.RUNTIME_GOOGLE_API_KEY || process.env.GOOGLE_API_KEY),
   });
 });
@@ -18,7 +23,7 @@ router.get("/llm", (_req, res) => {
 router.put("/llm", requireAuth, requireAdmin, (req, res, next) => {
   try {
     process.env.RUNTIME_GOOGLE_API_KEY = requiredString(req.body?.apiKey, "apiKey", 500);
-    return res.json({ provider: "google", model, configured: true });
+    return res.json({ provider: "google", model, fallbackModels, configured: true });
   } catch (error) {
     return next(error);
   }

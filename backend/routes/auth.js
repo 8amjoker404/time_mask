@@ -14,7 +14,15 @@ const authLimiter = rateLimit({
 });
 
 function publicUser(user) {
-  return { id: user.id, name: user.name, email: user.email, role: user.role };
+  return {
+    id: user.id,
+    name: user.name,
+    nickname: user.nickname || null,
+    gender: user.gender || null,
+    age: user.age == null ? null : Number(user.age),
+    email: user.email,
+    role: user.role,
+  };
 }
 
 function issueSession(res, user, status = 200) {
@@ -24,6 +32,18 @@ function issueSession(res, user, status = 200) {
 // POST /api/auth/register
 router.post("/register", authLimiter, asyncRoute(async (req, res) => {
   const name = requiredString(req.body?.name, "name", 100);
+  const nickname = typeof req.body?.nickname === "string" ? req.body.nickname.trim().slice(0, 40) || null : null;
+  if (nickname && !/^[a-zA-Z0-9_.-]{3,40}$/.test(nickname)) {
+    return res.status(400).json({ error: "Username must be 3–40 characters and use only letters, numbers, dots, underscores, or hyphens" });
+  }
+  const gender = req.body?.gender || null;
+  const age = req.body?.age === "" || req.body?.age == null ? null : Number(req.body.age);
+  if (gender && !["female", "male", "non_binary", "prefer_not_to_say"].includes(gender)) {
+    return res.status(400).json({ error: "Choose a valid gender option" });
+  }
+  if (age !== null && (!Number.isInteger(age) || age < 13 || age > 120)) {
+    return res.status(400).json({ error: "Age must be a whole number from 13 to 120" });
+  }
   const email = requiredString(req.body?.email, "email", 254).toLowerCase();
   const password = requiredString(req.body?.password, "password", 200);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -34,19 +54,29 @@ router.post("/register", authLimiter, asyncRoute(async (req, res) => {
   }
   const existing = await rowsFromQuery("SELECT id FROM users WHERE email = ? LIMIT 1", [email]);
   if (existing?.length) return res.status(409).json({ error: "An account with this email already exists" });
+  if (nickname) {
+    const existingNickname = await rowsFromQuery("SELECT id FROM users WHERE LOWER(nickname) = LOWER(?) LIMIT 1", [nickname]);
+    if (existingNickname?.length) return res.status(409).json({ error: "That username is already taken" });
+  }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await db.execute("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)", [name, email, passwordHash]);
-  const rows = await rowsFromQuery("SELECT id, name, email, role FROM users WHERE email = ? LIMIT 1", [email]);
+  await db.execute(
+    "INSERT INTO users (name, nickname, gender, age, email, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
+    [name, nickname, gender, age, email, passwordHash]
+  );
+  const rows = await rowsFromQuery("SELECT id, name, nickname, gender, age, email, role FROM users WHERE email = ? LIMIT 1", [email]);
   if (!rows?.length) throw new Error("Account created but could not be loaded");
   return issueSession(res, rows[0], 201);
 }));
 
 // POST /api/auth/login
 router.post("/login", authLimiter, asyncRoute(async (req, res) => {
-  const email = requiredString(req.body?.email, "email", 254).toLowerCase();
+  const identifier = requiredString(req.body?.identifier ?? req.body?.email, "email or username", 254).trim();
   const password = requiredString(req.body?.password, "password", 200);
-  const rows = await rowsFromQuery("SELECT id, name, email, password_hash, role FROM users WHERE email = ? LIMIT 1", [email]);
+  const rows = await rowsFromQuery(
+    "SELECT id, name, nickname, gender, age, email, password_hash, role FROM users WHERE email = ? OR LOWER(nickname) = LOWER(?) LIMIT 1",
+    [identifier.toLowerCase(), identifier]
+  );
   const user = rows?.[0];
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: "Email or password is incorrect" });
@@ -56,7 +86,7 @@ router.post("/login", authLimiter, asyncRoute(async (req, res) => {
 
 // GET /api/auth/me
 router.get("/me", requireAuth, asyncRoute(async (req, res) => {
-  const rows = await rowsFromQuery("SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1", [req.user.id]);
+  const rows = await rowsFromQuery("SELECT id, name, nickname, gender, age, email, role FROM users WHERE id = ? LIMIT 1", [req.user.id]);
   if (!rows?.length) return res.status(401).json({ error: "Account no longer exists" });
   res.json({ user: publicUser(rows[0]) });
 }));
